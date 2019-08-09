@@ -1,6 +1,5 @@
 package rfCalculator;
 
-import java.util.List;
 import java.util.Scanner;
 
 import static rfCalculator.PolicyPlan.*;
@@ -81,6 +80,11 @@ public class ScanData {
             str = scanner.nextLine();
         }
         return result;
+    }
+
+    public boolean readRegion() {
+        System.out.print("Please Enter region(usa/canada): ");
+        return readValue(new String[]{"usa", "canada"}).equals("usa");
     }
 
     private void readPolicyScheme() {

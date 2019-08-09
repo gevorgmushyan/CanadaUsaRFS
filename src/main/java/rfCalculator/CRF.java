@@ -15,7 +15,8 @@ public class CRF {
     public MyExcel excel;
     public final boolean isUsa;
     //public String filePath = System.getProperty("user.dir") + "\\src\\main\\resources\\Blueprint (Rates) 20190423 0525 pm.xlsx";
-    public String filePath_usa = System.getProperty("user.dir") + "\\src\\main\\resources\\Blueprint - US (Rates) 20190703 0850 am.xlsx";
+    //public String filePath_usa = System.getProperty("user.dir") + "\\src\\main\\resources\\Blueprint - US (Rates) 20190703 0850 am.xlsx";
+    public String filePath_usa = System.getProperty("user.dir") + "\\src\\main\\resources\\Blueprint - US (Rates) 20190808 1215 pm.xlsx";
     //public String filePath_canada = System.getProperty("user.dir") + "\\src\\main\\resources\\Blueprint - Canada (Rates) 20190703 1145 am.xlsx";
     public String filePath_canada = System.getProperty("user.dir") + "\\src\\main\\resources\\Blueprint - Canada (Rates) 20190719 0215 pm.xlsx";
 
@@ -330,7 +331,9 @@ public class CRF {
 
     public static void main(String[] args) {
         disableWarning();
-        CRF calculator = new CRF(false);
+        ScanData scan = new ScanData();
+
+        CRF calculator = new CRF( scan.readRegion());
         System.out.println();
         System.out.println("Base Rate: " + calculator.getBaseRate());
         System.out.println("Breed Factor: " + calculator.getBreedAgeFactor());
