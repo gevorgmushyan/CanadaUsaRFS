@@ -16,7 +16,8 @@ public class CRF {
     public final boolean isUsa;
     //public String filePath = System.getProperty("user.dir") + "\\src\\main\\resources\\Blueprint (Rates) 20190423 0525 pm.xlsx";
     //public String filePath_usa = System.getProperty("user.dir") + "\\src\\main\\resources\\Blueprint - US (Rates) 20190703 0850 am.xlsx";
-    public String filePath_usa = System.getProperty("user.dir") + "\\src\\main\\resources\\Blueprint - US (Rates) 20190808 1215 pm.xlsx";
+    //public String filePath_usa = System.getProperty("user.dir") + "\\src\\main\\resources\\Blueprint - US (Rates) 20190808 1215 pm.xlsx";
+    public String filePath_usa = System.getProperty("user.dir") + "\\src\\main\\resources\\Blueprint - US (Rates) 20190809 1053 am.xlsx";
     //public String filePath_canada = System.getProperty("user.dir") + "\\src\\main\\resources\\Blueprint - Canada (Rates) 20190703 1145 am.xlsx";
     public String filePath_canada = System.getProperty("user.dir") + "\\src\\main\\resources\\Blueprint - Canada (Rates) 20190719 0215 pm.xlsx";
 
