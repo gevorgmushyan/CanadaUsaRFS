@@ -77,6 +77,30 @@ public class MyExcel {
         return -1;
     }
 
+    public int finedInColumn(int columnNum1, String value1, int columnNum2, String value2, int columnNum3, String value3,
+                             int startPos, int endPos) {
+        Iterator<Row> it = ws.iterator();
+        int i = 0;
+        while (i < startPos && it.hasNext()) {
+            it.next();
+            i++;
+        }
+        while (i <= endPos && it.hasNext()) {
+            Row row = it.next();
+            if (readCellValue(row, columnNum1).trim().toLowerCase()
+                    .equals(value1.trim().toLowerCase())
+                    &&
+                    readCellValue(row, columnNum2).trim().toLowerCase()
+                    .equals(value2.trim().toLowerCase())
+                    &&
+                    readCellValue(row, columnNum3).trim().toLowerCase()
+                    .equals(value3.trim().toLowerCase()))
+                return i;
+            i++;
+        }
+        return -1;
+    }
+
     public String readCell(int i, int j) {
         Row row = ws.getRow(i);
 

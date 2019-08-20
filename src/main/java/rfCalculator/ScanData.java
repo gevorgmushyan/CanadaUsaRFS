@@ -8,13 +8,14 @@ public class ScanData {
     private Policy policy;
     private Scanner scanner;
 
-    public ScanData() {
+    public  ScanData() {
         scanner = new Scanner(System.in);
+        policy = new Policy();
     }
 
-    public Policy scanAndGetPolicy(boolean isUsa) {
+    public Policy scanAndGetPolicy(boolean isUsa, String rfYear) {
 
-        policy = new Policy();
+        policy.setYear(rfYear);
 
         readPolicyScheme();
         readDeductible();
@@ -85,6 +86,13 @@ public class ScanData {
     public boolean readRegion() {
         System.out.print("Please Enter region(usa/canada): ");
         return readValue(new String[]{"usa", "canada"}).equals("usa");
+    }
+
+    public String readRFYear() {
+        System.out.print("Enter RF Year(2018/2019): ");
+        String value = readValue(new String[]{"2018", "2019"});
+        policy.setYear(value);
+        return value;
     }
 
     private void readPolicyScheme() {

@@ -18,32 +18,39 @@ public class CRF {
     //public String filePath_usa = System.getProperty("user.dir") + "\\src\\main\\resources\\Blueprint - US (Rates) 20190703 0850 am.xlsx";
     //public String filePath_usa = System.getProperty("user.dir") + "\\src\\main\\resources\\Blueprint - US (Rates) 20190808 1215 pm.xlsx";
     public String filePath_usa = System.getProperty("user.dir") + "\\src\\main\\resources\\Blueprint - US (Rates) 20190809 1053 am.xlsx";
+    public String filePath_usa_2018 = System.getProperty("user.dir") + "\\src\\main\\resources\\Blueprint (Rates) 20190312 0340 pm.xlsx";
     //public String filePath_canada = System.getProperty("user.dir") + "\\src\\main\\resources\\Blueprint - Canada (Rates) 20190703 1145 am.xlsx";
     public String filePath_canada = System.getProperty("user.dir") + "\\src\\main\\resources\\Blueprint - Canada (Rates) 20190719 0215 pm.xlsx";
+    public String filePath_canada_2018 = System.getProperty("user.dir") + "\\src\\main\\resources\\Blueprint - Canada (2018 Rates)_20181106 0905 am.xlsx";
 
-    public CRF(boolean isUsa) {
-        this.isUsa = isUsa;
+    public CRF() {
+        ScanData scan = new ScanData();
+        this.isUsa = scan.readRegion();
+        String rfYear = scan.readRFYear();
+
         Thread thread = new Thread("New Thread") {
             public void run() {
-                excel = new MyExcel(isUsa ? filePath_usa : filePath_canada);
+                excel = new MyExcel(isUsa ? getFilePathUsa(rfYear) : getFilePathCanada(rfYear));
             }
         };
         thread.start();
-        ScanData scan = new ScanData();
-        policy = scan.scanAndGetPolicy(isUsa);
+        policy = scan.scanAndGetPolicy(isUsa, rfYear);
     }
 
-    public CRF(boolean isUsa, PolicyHolder policyHolder) {
+    public CRF(boolean isUsa, String rfYear, PolicyHolder policyHolder) {
         this.isUsa = isUsa;
+        if (!rfYear.equals("2018") && !rfYear.equals("2019"))
+            throw new IllegalArgumentException("Illegal rfYear argument");
+
         Thread thread = new Thread("New Thread1") {
             @Override
             public void run() {
-                excel = new MyExcel(isUsa ? filePath_usa : filePath_canada);
+                excel = new MyExcel(isUsa ? getFilePathUsa(rfYear) : getFilePathCanada(rfYear));
             }
         };
         thread.start();
 
-        policy = new Policy();
+        policy = new Policy(rfYear);
 
         Quote quote = policyHolder.getQuote(0);
 
@@ -56,6 +63,28 @@ public class CRF {
         policy.setDeductible(formatSchemeValue(quote.getAnnualDeductible()));
         policy.setState(formatSchemeValue(policyHolder.getState()));
         policy.setZipCode(policyHolder.getZipOrPostalCode());
+    }
+
+    private String getFilePathUsa(String year) {
+        switch (year) {
+            case "2018":
+                return filePath_usa_2018;
+            case "2019":
+                return filePath_usa;
+            default:
+                throw new IllegalArgumentException("Illegal argument year: " + year);
+        }
+    }
+
+    private String getFilePathCanada(String year) {
+        switch (year) {
+            case "2019":
+                return filePath_canada;
+            case "2018":
+                return filePath_canada_2018;
+            default:
+                throw new IllegalArgumentException("Illegal argument year: " + year);
+        }
     }
 
     public String formatSchemeValue(String value) {
@@ -123,6 +152,51 @@ public class CRF {
         return Double.parseDouble(excel.readCell(baseLine + policy.getAge(), 3));
     }
 
+    public double getBreedFactor2018() {
+        String sheetName = "Breed";
+        switch (policy.getState().toUpperCase().trim()) {
+            case "FL":
+                sheetName = "FL Breed";
+                break;
+            case "NJ":
+                sheetName = "NJ Breed";
+                break;
+        }
+        excel.openWorkSheet(sheetName);
+        String breedVal = this.policy.getPetType().equals(PetType.DOG) ? "ppdog001" : "ppcat001";
+        int i = excel.finedInColumn(1, policy.getBreed(), 2, breedVal, 1, 628);
+        if (i == -1) {
+            System.out.println("Cannot fined breed in sheet.");
+            return -1;
+        }
+
+        String breedFactor = excel.readCell(i + 1, 4);
+
+        return Double.parseDouble(breedFactor);
+    }
+
+    public double getAgeFactor2018() {
+        excel.openWorkSheet("Age");
+        int baseLine = excel.finedInColumn(0, policy.getState(), 1, policy.getPetType().toString(), 3, 2656);
+        if (baseLine == -1) {
+            System.out.println("Cannot fined group Id for pet in sheet.");
+            return -1;
+        }
+
+        return Double.parseDouble(excel.readCell(baseLine + policy.getAge() + 1, 4));
+    }
+
+    public String getBreedAgeFactor(String year) {
+        switch (year) {
+            case "2018":
+                return getBreedFactor2018() + "\nAge Factor: " + getAgeFactor2018();
+            case "2019":
+                return "" + getBreedAgeFactor();
+            default:
+                return "-1";
+        }
+    }
+
     public double getAreaLookupUsa() {
         excel.openWorkSheet("Zip Code Look Up");
         int i = excel.finedInColumn(0, policy.getZipCode(), 3, 38250);
@@ -130,7 +204,7 @@ public class CRF {
             System.out.println("Cannot fined zip in sheet.");
             return -1;
         }
-        String areaLookup = excel.readCell(i, 4);
+        String areaLookup = excel.readCell(isUsa ? i + 1 : i, 4);
         System.out.println("Pet area lookup is: " + areaLookup);
 
         excel.openWorkSheet("Area 2019");
@@ -143,6 +217,35 @@ public class CRF {
         }
         int deep = policy.getPetType().equals(PetType.CAT) ? 0 : 7;
         return Double.parseDouble(excel.readCell(2 + num + deep, 3));
+    }
+
+    public double getAreaLookupUsa2018() {
+        excel.openWorkSheet("Zip Code Look Up");
+        int i = excel.finedInColumn(0, policy.getZipCode(), 3, 38250);
+        if (i == -1) {
+            System.out.println("Cannot fined zip in sheet.");
+            return -1;
+        }
+        String areaLookup = excel.readCell(isUsa ? i + 1 : i, 4);
+        System.out.println("Pet area lookup is: " + areaLookup);
+
+        excel.openWorkSheet("Area");
+        int num;
+        try {
+            num = (int) Double.parseDouble(areaLookup.trim());
+        } catch (NumberFormatException e) {
+            System.out.println("Bad format for area lookup.");
+            return -1;
+        }
+        int exception = excel.finedInColumn(0, policy.getState(),
+                1, policy.getPetType().toString(),
+                2, policy.getAge()+"",
+                7, 1000);
+        if (exception == -1) {
+            int deep = policy.getPetType().equals(PetType.CAT) ? 0 : 6;
+            return Double.parseDouble(excel.readCell(2 + num + deep, 3));
+        }
+        return Double.parseDouble(excel.readCell(exception, 3));
     }
 
     public double getAreaLookupCanada() {
@@ -182,6 +285,17 @@ public class CRF {
         int deep = policy.getPetType().equals(PetType.CAT) ? 0 : 4;
 
         return Double.parseDouble(excel.readCell(2 + num + deep, 2));
+    }
+
+    public double getAreaLookup(String year) {
+        switch (year) {
+            case "2018":
+                return getAreaLookupUsa2018();
+            case "2019":
+                return getAreaLookup();
+            default:
+                return -1;
+        }
     }
 
     public double getAreaLookup() {
@@ -276,7 +390,7 @@ public class CRF {
             System.out.println("Cannot fined state or pet in sheet.");
             return -1;
         }
-        String inception = excel.readCell(i + policy.getAge(), 4);
+        String inception = excel.readCell((isUsa ? i + 1 : i) + policy.getAge(), 4);
         return Double.parseDouble(inception);
     }
 
@@ -326,24 +440,22 @@ public class CRF {
             Field logger = cls.getDeclaredField("logger");
             u.putObjectVolatile(cls, u.staticFieldOffset(logger), null);
         } catch (Exception e) {
-            // ignorT8V 3Y4e
+            // ignore
         }
     }
 
     public static void main(String[] args) {
         disableWarning();
-        ScanData scan = new ScanData();
-
-        CRF calculator = new CRF( scan.readRegion());
+        CRF calculator = new CRF();
         System.out.println();
         System.out.println("Base Rate: " + calculator.getBaseRate());
-        System.out.println("Breed Factor: " + calculator.getBreedAgeFactor());
-        System.out.println("Area Lookup: " + calculator.getAreaLookup());
+        System.out.println("Breed Factor: " + calculator.getBreedAgeFactor(calculator.policy.getYear()));
+        System.out.println("Area Lookup: " + calculator.getAreaLookup(calculator.policy.getYear()));
         System.out.println("Deductible Factor: " + calculator.getDeductibleFactor());
         System.out.println("Copay Factor: " + calculator.getCopayFactor());
+        System.out.println("Surcharge Factor " + calculator.getSurchargeFactor(calculator.policy.isWorkingDog()));
         System.out.println("AnnualDeductible: " + calculator.getAnnualDeductible());
         System.out.println("Age-At-Inception Factor: " + calculator.getAgeAtInceptionFactor());
-        System.out.println("Surcharge Factor " + calculator.getSurchargeFactor(calculator.policy.isWorkingDog()));
     }
 }
 //mvn clean assembly:single
